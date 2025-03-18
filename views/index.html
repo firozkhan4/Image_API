@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Photo Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .photo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #preview {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 3px solid #ccc;
+            object-fit: cover;
+            margin-bottom: 15px;
+            background-color: #eee;
+        }
+        .upload-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .camera-container {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            background-color: #4285f4;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .file-label:hover {
+            background-color: #3367d6;
+        }
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #34a853;
+        }
+        .submit-btn:hover {
+            background-color: #2e8b57;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+        .success {
+            color: green;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Profile Photo Upload</h1>
+        
+        <form id="profileForm" enctype="multipart/form-data">
+            <div class="photo-container">
+                <img id="preview" src="/api/placeholder/200/200" alt="">
+                <p id="message"></p>
+            </div>
+            
+            <div class="upload-options">
+                <label for="fileInput" class="file-label">Choose File</label>
+                <input type="file" name="file" id="fileInput" class="file-input" accept="image/*">
+                <button type="button" id="cameraButton">Use Camera</button>
+            </div>
+            
+            <div id="cameraContainer" class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <div style="margin-top: 10px;">
+                    <button type="button" id="captureButton">Take Photo</button>
+                    <button type="button" id="cancelCamera">Cancel</button>
+                </div>
+            </div>
+            
+            <button type="submit" id="submitButton" class="submit-btn">Upload Profile Photo</button>
+        </form>
+    </div>
+
+    <script>
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const cameraButton = document.getElementById('cameraButton');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const video = document.getElementById('video');
+        const captureButton = document.getElementById('captureButton');
+        const cancelCamera = document.getElementById('cancelCamera');
+        const preview = document.getElementById('preview');
+        const form = document.getElementById('profileForm');
+        const message = document.getElementById('message');
+        
+        // Track if we have a photo ready to submit
+        let photoReady = false;
+        let photoBlob = null;
+        
+        // Handle file selection
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    preview.src = event.target.result;
+                    photoReady = true;
+                    
+                    // Convert the file to a blob for submission
+                    file.arrayBuffer().then(buffer => {
+                        photoBlob = new Blob([buffer], { type: file.type });
+                    });
+                };
+                reader.readAsDataURL(file);
+                message.textContent = '';
+                message.className = '';
+            }
+        });
+        
+        // Camera functionality
+        cameraButton.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                cameraContainer.style.display = 'block';
+                message.textContent = '';
+                message.className = '';
+            } catch (err) {
+                message.textContent = 'Camera access denied or not available';
+                message.className = 'error';
+            }
+        });
+        
+        // Capture photo
+        captureButton.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            
+            // Calculate dimensions for a square crop (centered)
+            const size = Math.min(videoWidth, videoHeight);
+            const startX = (videoWidth - size) / 2;
+            const startY = (videoHeight - size) / 2;
+            
+            canvas.width = size;
+            canvas.height = size;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, startX, startY, size, size, 0, 0, size, size);
+            
+            // Display the captured image
+            preview.src = canvas.toDataURL('image/jpeg');
+            
+            // Convert to blob for submission
+            canvas.toBlob((blob) => {
+                photoBlob = blob;
+            }, 'image/jpeg', 0.9);
+            
+            // Stop the camera
+            stopCamera();
+            photoReady = true;
+        });
+        
+        // Cancel camera
+        cancelCamera.addEventListener('click', stopCamera);
+        
+        // Stop camera function
+        function stopCamera() {
+            const stream = video.srcObject;
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+            cameraContainer.style.display = 'none';
+        }
+        
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!photoReady) {
+                message.textContent = 'Please select or capture a profile photo first';
+                message.className = 'error';
+                return;
+            }
+            
+            try {
+                // Create form data with the photo blob
+                const formData = new FormData();
+                formData.append('file', photoBlob, 'profile.jpg');
+                
+                // Send to server - replace with your actual API endpoint
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    message.textContent = 'Profile photo uploaded successfully!';
+                    message.className = 'success';
+                } else {
+                    throw new Error('Server returned error: ' + response.status);
+                }
+            } catch (error) {
+                message.textContent = 'Error uploading photo: ' + error.message;
+                message.className = 'error';
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
