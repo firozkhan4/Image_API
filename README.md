@@ -73,8 +73,10 @@ A backend service that allows users to **upload, retrieve, and delete images**. 
 
 ### **1️⃣ Clone the Repository**  
 ```sh
-git clone <your-repo-url>
-cd backend-image-api
+git clone https://github.com/firozkhan4/Image_API.git
+cd Image_API
+npm install
+npm run dev
 ```
 
 ### **2️⃣ Install Dependencies**  
@@ -86,6 +88,7 @@ npm install
 Create a `.env` file in the project root and add the following:  
 ```env
 PORT=5000
+MONGODB_DBNAME=imageDB
 MONGO_URI=your_mongodb_connection_string
 CLOUDINARY_CLOUD_NAME=your_cloudinary_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
@@ -110,9 +113,9 @@ You can deploy the API on **Render / Vercel / AWS** by following these steps:
 ---
 
 ## 📂 Additional Resources  
-📌 **GitHub Repo:** [https://github.com/firozkhan/Image_API]  
-🌍 **Live API URL:** [Add link]  
-📌 **Postman Collection:** [Add link]  
+📌 **GitHub Repo:** https://github.com/firozkhan4/Image_API 
+🌍 **Live API URL:** https://image-api-8lhf.onrender.com/  
+📌 **Postman Collection:** https://assignment-1391.postman.co/workspace/Assignment-Workspace~b9deba51-cc40-45cd-aa86-642ecdedcfaa/collection/33507690-86071f59-23ba-49ee-90a6-0595793951f3?action=share&creator=33507690 
 
 ---
 
